@@ -41,13 +41,13 @@ copy and paste actions.
 
 ## Testing
 
-Unit tests require `pytest`. Install it along with the normal dependencies and
-run the test suite with. After making changes be sure to re-run the tests to
-ensure everything still works:
+Unit tests require `pytest`. Install it along with the normal dependencies,
+then run the test suite using:
 
 ```bash
 pip install -r requirements.txt pytest
 pytest
 ```
 
+After making changes be sure to re-run the tests to ensure everything still works.
 Tests exercise the API wrapper logic without making real network calls.
