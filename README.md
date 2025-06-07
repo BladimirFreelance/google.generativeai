@@ -38,15 +38,6 @@ resulting video file.
 Right‑click or Ctrl‑click any text field to open a context menu for cut,
 copy and paste actions.
 
-Advanced settings are available under **Advanced Options** and map to fields on
-`GenerateVideosConfig`:
-
-- **FPS** – frames per second for the output video.
-- **Aspect Ratio** – choose 16:9 or 9:16.
-- **Seed** – fixed seed for reproducible results.
-- **Negative Prompt** – specify concepts to avoid.
-- **Generate Audio** – include audio in the generated clip.
-
 ## Testing
 
 Unit tests require `pytest`. Install it along with the normal dependencies and

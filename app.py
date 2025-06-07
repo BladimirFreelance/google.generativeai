@@ -5,7 +5,6 @@ import base64
 import threading
 import time
 from dataclasses import asdict, dataclass
-from typing import Optional
 
 import google.generativeai as genai
 
@@ -14,13 +13,7 @@ import db
 
 @dataclass
 class GenerateVideosConfig:
-    resolution: str
     duration: int
-    fps: Optional[int] = None
-    aspect_ratio: Optional[str] = None
-    seed: Optional[int] = None
-    negative_prompt: Optional[str] = None
-    generate_audio: Optional[bool] = None
 
 
 class VideoApp(tk.Tk):
@@ -46,19 +39,8 @@ class VideoApp(tk.Tk):
         self.prompt_text = tk.Text(self, height=5, width=40)
         self.prompt_text.grid(row=1, column=1, pady=5)
 
-        # Resolution dropdown
-        tk.Label(self, text="Resolution:").grid(row=2, column=0, sticky="e")
-        self.resolution_var = tk.StringVar(value="1080p")
-        ttk.Combobox(
-            self,
-            textvariable=self.resolution_var,
-            values=["480p", "720p", "1080p"],
-            state="readonly",
-            width=10,
-        ).grid(row=2, column=1, sticky="w")
-
         # Duration spinbox
-        tk.Label(self, text="Duration (s):").grid(row=3, column=0, sticky="e")
+        tk.Label(self, text="Duration (s):").grid(row=2, column=0, sticky="e")
         self.duration_var = tk.IntVar(value=10)
         tk.Spinbox(
             self,
@@ -66,61 +48,7 @@ class VideoApp(tk.Tk):
             to=60,
             textvariable=self.duration_var,
             width=5,
-        ).grid(row=3, column=1, sticky="w")
-
-        # Container for optional parameters
-        advanced = tk.LabelFrame(self, text="Advanced Options")
-        advanced.grid(row=4, column=0, columnspan=2, pady=5, sticky="ew")
-
-        # FPS spinbox
-        tk.Label(advanced, text="FPS:").grid(row=0, column=0, sticky="e")
-        self.fps_var = tk.IntVar(value=24)
-        tk.Spinbox(
-            advanced,
-            from_=1,
-            to=120,
-            textvariable=self.fps_var,
-            width=5,
-        ).grid(row=0, column=1, sticky="w")
-
-        # Aspect ratio dropdown
-        tk.Label(advanced, text="Aspect Ratio:").grid(
-            row=1, column=0, sticky="e"
-        )
-        self.aspect_ratio_var = tk.StringVar(value="16:9")
-        ttk.Combobox(
-            advanced,
-            textvariable=self.aspect_ratio_var,
-            values=["16:9", "9:16"],
-            state="readonly",
-            width=10,
-        ).grid(row=1, column=1, sticky="w")
-
-        # Seed spinbox
-        tk.Label(advanced, text="Seed:").grid(row=2, column=0, sticky="e")
-        self.seed_var = tk.IntVar(value=0)
-        tk.Spinbox(
-            advanced,
-            from_=0,
-            to=2**31 - 1,
-            textvariable=self.seed_var,
-            width=10,
         ).grid(row=2, column=1, sticky="w")
-
-        # Negative prompt
-        tk.Label(advanced, text="Negative Prompt:").grid(
-            row=3, column=0, sticky="ne"
-        )
-        self.negative_prompt_text = tk.Text(advanced, height=2, width=40)
-        self.negative_prompt_text.grid(row=3, column=1, pady=5)
-
-        # Generate audio option
-        self.generate_audio_var = tk.BooleanVar(value=False)
-        tk.Checkbutton(
-            advanced,
-            text="Generate Audio",
-            variable=self.generate_audio_var,
-        ).grid(row=4, column=1, sticky="w")
 
         # Generate button
         self.generate_btn = tk.Button(
@@ -234,15 +162,8 @@ class VideoApp(tk.Tk):
             spinner_thread.start()
 
         try:
-            negative = self.negative_prompt_text.get("1.0", tk.END).strip()
             cfg = GenerateVideosConfig(
-                resolution=self.resolution_var.get(),
                 duration=int(self.duration_var.get()),
-                fps=int(self.fps_var.get()),
-                aspect_ratio=self.aspect_ratio_var.get(),
-                seed=int(self.seed_var.get()),
-                generate_audio=bool(self.generate_audio_var.get()),
-                negative_prompt=negative or None,
             )
 
             operation = client.models.generate_videos(
