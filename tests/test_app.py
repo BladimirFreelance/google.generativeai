@@ -12,9 +12,11 @@ google_pkg.__path__ = []
 sys.modules.setdefault("google", google_pkg)
 sys.modules["google.generativeai"] = genai_stub
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.insert(
+    0, os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+)
 
-import app
+import app  # noqa: E402
 
 
 class DummyVar:
@@ -45,7 +47,9 @@ class DummyApp:
         self.aspect_ratio_var = DummyVar("16:9")
         self.seed_var = DummyVar(42)
         self.generate_audio_var = DummyVar(True)
-        self.negative_prompt_text = types.SimpleNamespace(get=lambda *args, **kwargs: "avoid cats")
+        self.negative_prompt_text = types.SimpleNamespace(
+            get=lambda *args, **kwargs: "avoid cats"
+        )
         self.result = None
         self.error = None
 
@@ -90,7 +94,9 @@ def test_generate_worker_success(monkeypatch):
             return FakeOperation(result_obj=result)
 
     monkeypatch.setattr(app.genai, "configure", fake_configure)
-    monkeypatch.setattr(app.genai, "GenerativeModel", lambda model_id: FakeModel(model_id))
+    monkeypatch.setattr(
+        app.genai, "GenerativeModel", lambda model_id: FakeModel(model_id)
+    )
 
     app.VideoApp._generate_worker(dummy, "APIKEY", "hello")
 
@@ -113,7 +119,9 @@ def test_generate_worker_error(monkeypatch):
             return FakeOperation(raise_on_result=True)
 
     monkeypatch.setattr(app.genai, "configure", fake_configure)
-    monkeypatch.setattr(app.genai, "GenerativeModel", lambda model_id: FakeModel(model_id))
+    monkeypatch.setattr(
+        app.genai, "GenerativeModel", lambda model_id: FakeModel(model_id)
+    )
 
     app.VideoApp._generate_worker(dummy, "KEY", "prompt")
 
@@ -141,7 +149,9 @@ def test_generate_worker_error_delayed(monkeypatch):
             return FakeOperation(raise_on_result=True)
 
     monkeypatch.setattr(app.genai, "configure", lambda api_key: None)
-    monkeypatch.setattr(app.genai, "GenerativeModel", lambda model_id: FakeModel(model_id))
+    monkeypatch.setattr(
+        app.genai, "GenerativeModel", lambda model_id: FakeModel(model_id)
+    )
 
     # Run worker; callback is stored but not executed yet
     app.VideoApp._generate_worker(dummy, "KEY", "prompt")
@@ -162,10 +172,15 @@ def test_generate_worker_operation_error(monkeypatch):
 
         def generate_content(self, prompt, generation_config):
             result = types.SimpleNamespace(candidates=[])  # unused
-            return FakeOperation(result_obj=result, error=types.SimpleNamespace(message="bad prompt"))
+            return FakeOperation(
+                result_obj=result,
+                error=types.SimpleNamespace(message="bad prompt"),
+            )
 
     monkeypatch.setattr(app.genai, "configure", lambda api_key: None)
-    monkeypatch.setattr(app.genai, "GenerativeModel", lambda model_id: FakeModel(model_id))
+    monkeypatch.setattr(
+        app.genai, "GenerativeModel", lambda model_id: FakeModel(model_id)
+    )
 
     app.VideoApp._generate_worker(dummy, "KEY", "prompt")
 
