@@ -276,15 +276,19 @@ class VideoApp(tk.Tk):
                 part = response.candidates[0].content.parts[0]
                 if hasattr(part, "inline_data") and part.inline_data.data:
                     video_bytes = base64.b64decode(part.inline_data.data)
-                elif hasattr(part, "file_data") and part.file_data.file_uri:
-                    # If a file URI is provided, attempt to download the
-                    # content
-                    import urllib.request
+                else:
+                    has_file_data = (
+                        getattr(part, "file_data", None) is not None
+                    )
+                    if has_file_data and part.file_data.file_uri:
+                        # If a file URI is provided, attempt to download the
+                        # content
+                        import urllib.request
 
-                    with urllib.request.urlopen(
-                        part.file_data.file_uri
-                    ) as resp:
-                        video_bytes = resp.read()
+                        with urllib.request.urlopen(
+                            part.file_data.file_uri
+                        ) as resp:
+                            video_bytes = resp.read()
             except Exception:
                 pass
 

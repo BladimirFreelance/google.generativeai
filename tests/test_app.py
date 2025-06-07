@@ -89,7 +89,9 @@ def test_generate_worker_success(monkeypatch):
                 )
                 content = types.SimpleNamespace(parts=[part])
                 candidate = types.SimpleNamespace(content=content)
-                result = types.SimpleNamespace(candidates=[candidate])
+                result = types.SimpleNamespace(
+                    candidates=[candidate]
+                )
                 return FakeOperation(result_obj=result)
 
             self.models = types.SimpleNamespace(
@@ -170,7 +172,9 @@ def test_generate_worker_operation_error(monkeypatch):
     class FakeClient:
         def __init__(self):
             def generate_videos(prompt, *, model, generation_config):
-                result = types.SimpleNamespace(candidates=[])
+                result = types.SimpleNamespace(
+                    candidates=[]
+                )
                 return FakeOperation(
                     result_obj=result,
                     error=types.SimpleNamespace(message="bad prompt"),
@@ -196,7 +200,9 @@ def test_generate_worker_operation_error_delayed(monkeypatch):
     class FakeClient:
         def __init__(self):
             def generate_videos(prompt, *, model, generation_config):
-                result = types.SimpleNamespace(candidates=[])
+                result = types.SimpleNamespace(
+                    candidates=[]
+                )
                 return FakeOperation(
                     result_obj=result,
                     error=types.SimpleNamespace(message="delayed bad"),
