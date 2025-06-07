@@ -42,8 +42,7 @@ copy and paste actions.
 
 ## Testing
 
-Unit tests require `pytest`. Install it along with the normal dependencies,
-then run the test suite using:
+Unit tests require `pytest`. Install it together with the dependencies and run:
 
 ```bash
 pip install -r requirements.txt pytest
