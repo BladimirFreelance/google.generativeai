@@ -72,13 +72,21 @@ class VideoApp(tk.Tk):
         genai.configure(api_key=api_key)
         model = genai.GenerativeModel("models/veo-2.0-generate-001")
         try:
-            response = model.generate_content(
+            operation = model.generate_content(
                 prompt,
                 generation_config={
                     "resolution": self.resolution_var.get(),
                     "duration": int(self.duration_var.get()),
                 },
             )
+
+            # Poll until the operation completes and obtain the response
+            response = operation.result()
+
+            if getattr(operation, "error", None) is not None:
+                # Long running operation completed with an error
+                err = getattr(operation.error, "message", str(operation.error))
+                raise RuntimeError(err)
 
             # Extract base64 encoded bytes from the response
             video_bytes = None
