@@ -6,7 +6,9 @@ import types
 # Provide a minimal stub for google.generativeai so that app.py can be imported
 genai_stub = types.ModuleType("google.generativeai")
 genai_stub.configure = lambda api_key: None
-genai_stub.GenerativeClient = object
+genai_stub.client = types.SimpleNamespace(
+    get_default_generative_client=lambda: object
+)
 google_pkg = types.ModuleType("google")
 google_pkg.__path__ = []
 sys.modules.setdefault("google", google_pkg)
@@ -85,7 +87,11 @@ def test_generate_worker_success(monkeypatch):
             )
 
     monkeypatch.setattr(app.genai, "configure", fake_configure)
-    monkeypatch.setattr(app.genai, "GenerativeClient", lambda: FakeClient())
+    monkeypatch.setattr(
+        app.genai.client,
+        "get_default_generative_client",
+        lambda: FakeClient(),
+    )
 
     app.VideoApp._generate_worker(dummy, "APIKEY", "hello")
 
@@ -110,7 +116,11 @@ def test_generate_worker_error(monkeypatch):
             )
 
     monkeypatch.setattr(app.genai, "configure", fake_configure)
-    monkeypatch.setattr(app.genai, "GenerativeClient", lambda: FakeClient())
+    monkeypatch.setattr(
+        app.genai.client,
+        "get_default_generative_client",
+        lambda: FakeClient(),
+    )
 
     app.VideoApp._generate_worker(dummy, "KEY", "prompt")
 
@@ -140,7 +150,11 @@ def test_generate_worker_error_delayed(monkeypatch):
             )
 
     monkeypatch.setattr(app.genai, "configure", lambda api_key: None)
-    monkeypatch.setattr(app.genai, "GenerativeClient", lambda: FakeClient())
+    monkeypatch.setattr(
+        app.genai.client,
+        "get_default_generative_client",
+        lambda: FakeClient(),
+    )
 
     # Run worker; callback is stored but not executed yet
     app.VideoApp._generate_worker(dummy, "KEY", "prompt")
@@ -171,7 +185,11 @@ def test_generate_worker_operation_error(monkeypatch):
             )
 
     monkeypatch.setattr(app.genai, "configure", lambda api_key: None)
-    monkeypatch.setattr(app.genai, "GenerativeClient", lambda: FakeClient())
+    monkeypatch.setattr(
+        app.genai.client,
+        "get_default_generative_client",
+        lambda: FakeClient(),
+    )
 
     app.VideoApp._generate_worker(dummy, "KEY", "prompt")
 
@@ -199,7 +217,11 @@ def test_generate_worker_operation_error_delayed(monkeypatch):
             )
 
     monkeypatch.setattr(app.genai, "configure", lambda api_key: None)
-    monkeypatch.setattr(app.genai, "GenerativeClient", lambda: FakeClient())
+    monkeypatch.setattr(
+        app.genai.client,
+        "get_default_generative_client",
+        lambda: FakeClient(),
+    )
 
     # Run worker; callback is stored but not executed yet
     app.VideoApp._generate_worker(dummy, "KEY", "prompt")
@@ -327,7 +349,11 @@ def test_generate_worker_fetch_error(monkeypatch):
             )
 
     monkeypatch.setattr(app.genai, "configure", lambda api_key: None)
-    monkeypatch.setattr(app.genai, "GenerativeClient", lambda: FakeClient())
+    monkeypatch.setattr(
+        app.genai.client,
+        "get_default_generative_client",
+        lambda: FakeClient(),
+    )
 
     app.VideoApp._generate_worker(dummy, "KEY", "prompt")
 

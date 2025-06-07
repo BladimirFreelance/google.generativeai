@@ -148,7 +148,7 @@ class VideoApp(tk.Tk):
     def _generate_worker(self, api_key: str, prompt: str) -> None:
         """Background thread that performs the API call."""
         genai.configure(api_key=api_key)
-        client = genai.GenerativeClient()
+        client = genai.client.get_default_generative_client()
 
         spinner_stop = threading.Event()
         spinner_thread = None
