@@ -26,6 +26,14 @@ Enter your API key, the prompt, configure the video parameters and click
 **Generate**. When the generation completes you will be asked where to save the
 resulting video file.
 
+The interface also exposes optional settings from `GenerateVideosConfig`:
+
+- **FPS** – frames per second for the output video.
+- **Aspect Ratio** – choose 16:9 or 9:16.
+- **Seed** – fixed seed for reproducible results.
+- **Negative Prompt** – specify concepts to avoid.
+- **Generate Audio** – include audio in the generated clip.
+
 ## Testing
 
 Unit tests require `pytest`. Install it along with the normal dependencies and

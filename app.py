@@ -41,17 +41,53 @@ class VideoApp(tk.Tk):
             row=3, column=1, sticky="w"
         )
 
+        # FPS spinbox
+        tk.Label(self, text="FPS:").grid(row=4, column=0, sticky="e")
+        self.fps_var = tk.IntVar(value=24)
+        tk.Spinbox(self, from_=1, to=120, textvariable=self.fps_var, width=5).grid(
+            row=4, column=1, sticky="w"
+        )
+
+        # Aspect ratio dropdown
+        tk.Label(self, text="Aspect Ratio:").grid(row=5, column=0, sticky="e")
+        self.aspect_ratio_var = tk.StringVar(value="16:9")
+        ttk.Combobox(
+            self,
+            textvariable=self.aspect_ratio_var,
+            values=["16:9", "9:16"],
+            state="readonly",
+            width=10,
+        ).grid(row=5, column=1, sticky="w")
+
+        # Seed spinbox
+        tk.Label(self, text="Seed:").grid(row=6, column=0, sticky="e")
+        self.seed_var = tk.IntVar(value=0)
+        tk.Spinbox(self, from_=0, to=2**31 - 1, textvariable=self.seed_var, width=10).grid(
+            row=6, column=1, sticky="w"
+        )
+
+        # Negative prompt
+        tk.Label(self, text="Negative Prompt:").grid(row=7, column=0, sticky="ne")
+        self.negative_prompt_text = tk.Text(self, height=2, width=40)
+        self.negative_prompt_text.grid(row=7, column=1, pady=5)
+
+        # Generate audio option
+        self.generate_audio_var = tk.BooleanVar(value=False)
+        tk.Checkbutton(self, text="Generate Audio", variable=self.generate_audio_var).grid(
+            row=8, column=1, sticky="w"
+        )
+
         # Generate button
         self.generate_btn = tk.Button(self, text="Generate", command=self.generate)
-        self.generate_btn.grid(row=4, column=0, columnspan=2, pady=10)
+        self.generate_btn.grid(row=9, column=0, columnspan=2, pady=10)
 
         # Progress/result label
         self.status_var = tk.StringVar(value="")
-        tk.Label(self, textvariable=self.status_var).grid(row=5, column=0, columnspan=2)
+        tk.Label(self, textvariable=self.status_var).grid(row=10, column=0, columnspan=2)
 
         # Progress bar used as a spinner while polling
         self.progress = ttk.Progressbar(self, mode="indeterminate", length=200)
-        self.progress.grid(row=6, column=0, columnspan=2, pady=5)
+        self.progress.grid(row=11, column=0, columnspan=2, pady=5)
         self.progress.grid_remove()
         
         # Spinner control variables
@@ -100,12 +136,21 @@ class VideoApp(tk.Tk):
         genai.configure(api_key=api_key)
         model = genai.GenerativeModel("models/veo-2.0-generate-001")
         try:
+            config = {
+                "resolution": self.resolution_var.get(),
+                "duration": int(self.duration_var.get()),
+                "fps": int(self.fps_var.get()),
+                "aspect_ratio": self.aspect_ratio_var.get(),
+                "seed": int(self.seed_var.get()),
+                "generate_audio": bool(self.generate_audio_var.get()),
+            }
+            negative = self.negative_prompt_text.get("1.0", tk.END).strip()
+            if negative:
+                config["negative_prompt"] = negative
+
             operation = model.generate_content(
                 prompt,
-                generation_config={
-                    "resolution": self.resolution_var.get(),
-                    "duration": int(self.duration_var.get()),
-                },
+                generation_config=config,
             )
 
             # Poll until the operation completes and obtain the response
