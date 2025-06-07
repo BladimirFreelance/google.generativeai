@@ -49,6 +49,14 @@ class VideoApp(tk.Tk):
         self.status_var = tk.StringVar(value="")
         tk.Label(self, textvariable=self.status_var).grid(row=5, column=0, columnspan=2)
 
+        # Progress bar used as a spinner while polling
+        self.progress = ttk.Progressbar(self, mode="indeterminate", length=200)
+        self.progress.grid(row=6, column=0, columnspan=2, pady=5)
+        self.progress.grid_remove()
+        
+        # Spinner control variables
+        self._spinner_running = False
+
     def generate(self):
         """Generate the video using the provided prompt and configuration."""
         api_key = self.api_key_entry.get().strip()
@@ -59,6 +67,8 @@ class VideoApp(tk.Tk):
 
         self.status_var.set("Generating...")
         self.generate_btn.config(state=tk.DISABLED)
+        self.progress.grid()
+        self._start_spinner()
         self.update_idletasks()
 
         threading.Thread(
@@ -66,6 +76,24 @@ class VideoApp(tk.Tk):
             args=(api_key, prompt),
             daemon=True,
         ).start()
+
+    def _start_spinner(self) -> None:
+        """Start the progress spinner."""
+        if not self._spinner_running:
+            self._spinner_running = True
+            self.progress.start(10)
+            self.after(100, self._update_spinner)
+
+    def _update_spinner(self) -> None:
+        if self._spinner_running:
+            self.progress.step(5)
+            self.after(100, self._update_spinner)
+
+    def _stop_spinner(self) -> None:
+        if self._spinner_running:
+            self._spinner_running = False
+            self.progress.stop()
+            self.progress.grid_remove()
 
     def _generate_worker(self, api_key: str, prompt: str) -> None:
         """Background thread that performs the API call."""
@@ -123,11 +151,13 @@ class VideoApp(tk.Tk):
             with open(path, "wb") as f:
                 f.write(video_bytes)
             messagebox.showinfo("Saved", f"Video saved to {path}")
+        self._stop_spinner()
         self.status_var.set("Done")
         self.generate_btn.config(state=tk.NORMAL)
 
     def _handle_error(self, exc: Exception) -> None:
         """Display an error message from the GUI thread."""
+        self._stop_spinner()
         self.status_var.set("Error generating video")
         messagebox.showerror("Error", str(exc))
         self.generate_btn.config(state=tk.NORMAL)
