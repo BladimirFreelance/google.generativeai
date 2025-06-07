@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 
 import google.generativeai as genai
+import base64
 
 
 class VideoApp(tk.Tk):
@@ -56,7 +57,7 @@ class VideoApp(tk.Tk):
             return
 
         genai.configure(api_key=api_key)
-        model = genai.GenerativeModel("models/video")  # placeholder model name
+        model = genai.GenerativeModel("models/veo-2.0-generate-001")
 
         self.status_var.set("Generating...")
         self.update_idletasks()
@@ -68,8 +69,25 @@ class VideoApp(tk.Tk):
                     "duration": int(self.duration_var.get()),
                 },
             )
-            # Save response bytes/text to file
-            video_bytes = bytes(str(response), "utf-8")
+
+            # Extract base64 encoded bytes from the response
+            video_bytes = None
+            try:
+                part = response.candidates[0].content.parts[0]
+                if hasattr(part, "inline_data") and part.inline_data.data:
+                    video_bytes = base64.b64decode(part.inline_data.data)
+                elif hasattr(part, "file_data") and part.file_data.file_uri:
+                    # If a file URI is provided, attempt to download the content
+                    import urllib.request
+
+                    with urllib.request.urlopen(part.file_data.file_uri) as resp:
+                        video_bytes = resp.read()
+            except Exception:
+                pass
+
+            if video_bytes is None:
+                # Fallback to saving the raw response
+                video_bytes = bytes(str(response), "utf-8")
             path = filedialog.asksaveasfilename(
                 defaultextension=".mp4",
                 filetypes=[("MP4 files", "*.mp4"), ("All files", "*.*")],
