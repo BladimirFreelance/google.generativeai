@@ -7,6 +7,7 @@ import time
 from dataclasses import asdict, dataclass
 
 import google.generativeai as genai
+from google.generativeai import client as genai_client
 
 import db
 
@@ -148,7 +149,7 @@ class VideoApp(tk.Tk):
     def _generate_worker(self, api_key: str, prompt: str) -> None:
         """Background thread that performs the API call."""
         genai.configure(api_key=api_key)
-        client = genai.client.get_default_generative_client()
+        client = genai_client.get_default_generative_client()
 
         spinner_stop = threading.Event()
         spinner_thread = None

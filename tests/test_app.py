@@ -6,13 +6,14 @@ import types
 # Provide a minimal stub for google.generativeai so that app.py can be imported
 genai_stub = types.ModuleType("google.generativeai")
 genai_stub.configure = lambda api_key: None
-genai_stub.client = types.SimpleNamespace(
-    get_default_generative_client=lambda: object
-)
+client_stub = types.ModuleType("google.generativeai.client")
+client_stub.get_default_generative_client = lambda: object
+genai_stub.client = client_stub
 google_pkg = types.ModuleType("google")
 google_pkg.__path__ = []
 sys.modules.setdefault("google", google_pkg)
 sys.modules["google.generativeai"] = genai_stub
+sys.modules["google.generativeai.client"] = client_stub
 
 sys.path.insert(
     0, os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -88,7 +89,7 @@ def test_generate_worker_success(monkeypatch):
 
     monkeypatch.setattr(app.genai, "configure", fake_configure)
     monkeypatch.setattr(
-        app.genai.client,
+        app.genai_client,
         "get_default_generative_client",
         lambda: FakeClient(),
     )
@@ -117,7 +118,7 @@ def test_generate_worker_error(monkeypatch):
 
     monkeypatch.setattr(app.genai, "configure", fake_configure)
     monkeypatch.setattr(
-        app.genai.client,
+        app.genai_client,
         "get_default_generative_client",
         lambda: FakeClient(),
     )
@@ -151,7 +152,7 @@ def test_generate_worker_error_delayed(monkeypatch):
 
     monkeypatch.setattr(app.genai, "configure", lambda api_key: None)
     monkeypatch.setattr(
-        app.genai.client,
+        app.genai_client,
         "get_default_generative_client",
         lambda: FakeClient(),
     )
@@ -186,7 +187,7 @@ def test_generate_worker_operation_error(monkeypatch):
 
     monkeypatch.setattr(app.genai, "configure", lambda api_key: None)
     monkeypatch.setattr(
-        app.genai.client,
+        app.genai_client,
         "get_default_generative_client",
         lambda: FakeClient(),
     )
@@ -218,7 +219,7 @@ def test_generate_worker_operation_error_delayed(monkeypatch):
 
     monkeypatch.setattr(app.genai, "configure", lambda api_key: None)
     monkeypatch.setattr(
-        app.genai.client,
+        app.genai_client,
         "get_default_generative_client",
         lambda: FakeClient(),
     )
@@ -350,7 +351,7 @@ def test_generate_worker_fetch_error(monkeypatch):
 
     monkeypatch.setattr(app.genai, "configure", lambda api_key: None)
     monkeypatch.setattr(
-        app.genai.client,
+        app.genai_client,
         "get_default_generative_client",
         lambda: FakeClient(),
     )
