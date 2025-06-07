@@ -218,3 +218,98 @@ def test_generate_worker_operation_error_delayed(monkeypatch):
     assert dummy.result is None
     assert isinstance(dummy.error, RuntimeError)
     assert "delayed bad" in str(dummy.error)
+
+
+def test_context_menu_bindings(monkeypatch):
+    """Ensure right-click bindings exist for text widgets."""
+    tk_stub = types.ModuleType("tkinter")
+
+    class DummyVar:
+        def __init__(self, value=None):
+            self.value = value
+
+        def get(self):
+            return self.value
+
+    class DummyWidget:
+        def __init__(self, *a, **k):
+            self.bindings = {}
+
+        def grid(self, *a, **k):
+            pass
+
+        def grid_remove(self, *a, **k):
+            pass
+
+        def configure(self, *a, **k):
+            pass
+
+        config = configure
+
+        def bind(self, seq=None, func=None, add=None):
+            if func is not None:
+                self.bindings[seq] = func
+            return self.bindings.get(seq)
+
+        def event_generate(self, *a, **k):
+            pass
+
+    class DummyMenu(DummyWidget):
+        def add_command(self, *a, **k):
+            pass
+
+        def tk_popup(self, *a, **k):
+            pass
+
+        def grab_release(self):
+            pass
+
+    class DummyTk(DummyWidget):
+        def title(self, *a, **k):
+            pass
+
+        def update_idletasks(self, *a, **k):
+            pass
+
+        def after(self, delay, func):
+            func()
+
+    tk_stub.Tk = DummyTk
+    tk_stub.Label = DummyWidget
+    tk_stub.Entry = DummyWidget
+    tk_stub.Text = DummyWidget
+    tk_stub.LabelFrame = DummyWidget
+    tk_stub.Spinbox = DummyWidget
+    tk_stub.Checkbutton = DummyWidget
+    tk_stub.Button = DummyWidget
+    tk_stub.StringVar = lambda *a, value=None, **k: DummyVar(value)
+    tk_stub.IntVar = lambda *a, value=None, **k: DummyVar(value)
+    tk_stub.BooleanVar = lambda *a, value=None, **k: DummyVar(value)
+    tk_stub.Menu = DummyMenu
+    tk_stub.END = "end"
+
+    ttk_stub = types.ModuleType("tkinter.ttk")
+    ttk_stub.Combobox = DummyWidget
+    ttk_stub.Progressbar = DummyWidget
+
+    filedialog_stub = types.ModuleType("tkinter.filedialog")
+    filedialog_stub.asksaveasfilename = lambda *a, **k: ""
+
+    messagebox_stub = types.ModuleType("tkinter.messagebox")
+    messagebox_stub.showerror = lambda *a, **k: None
+    messagebox_stub.showinfo = lambda *a, **k: None
+
+    monkeypatch.setitem(sys.modules, "tkinter", tk_stub)
+    monkeypatch.setitem(sys.modules, "tkinter.ttk", ttk_stub)
+    monkeypatch.setitem(sys.modules, "tkinter.filedialog", filedialog_stub)
+    monkeypatch.setitem(sys.modules, "tkinter.messagebox", messagebox_stub)
+
+    import importlib
+
+    importlib.reload(app)
+
+    gui = app.VideoApp()
+
+    for seq in ("<Button-3>", "<Control-Button-1>"):
+        assert gui.api_key_entry.bind(seq) is not None
+        assert gui.prompt_text.bind(seq) is not None
