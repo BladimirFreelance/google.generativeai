@@ -319,3 +319,29 @@ def test_context_menu_bindings(monkeypatch):
     for seq in ("<Button-3>", "<Control-Button-1>"):
         assert gui.api_key_entry.bind(seq) is not None
         assert gui.prompt_text.bind(seq) is not None
+
+
+def test_generate_worker_fetch_error(monkeypatch):
+    dummy = DummyApp()
+
+    class FakeClient:
+        def __init__(self):
+            def generate_videos(prompt, *, model, generation_config):
+                part = types.SimpleNamespace(
+                    inline_data=types.SimpleNamespace(data="bad"),
+                    file_data=None,
+                )
+                content = types.SimpleNamespace(parts=[part])
+                candidate = types.SimpleNamespace(content=content)
+                result = types.SimpleNamespace(candidates=[candidate])
+                return FakeOperation(result_obj=result)
+
+            self.models = types.SimpleNamespace(generate_videos=generate_videos)
+
+    monkeypatch.setattr(app.genai, "configure", lambda api_key: None)
+    monkeypatch.setattr(app.genai, "GenerativeClient", lambda: FakeClient())
+
+    app.VideoApp._generate_worker(dummy, "KEY", "prompt")
+
+    assert dummy.result is None
+    assert isinstance(dummy.error, Exception)

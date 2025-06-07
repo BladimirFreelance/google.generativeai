@@ -289,8 +289,9 @@ class VideoApp(tk.Tk):
                             part.file_data.file_uri
                         ) as resp:
                             video_bytes = resp.read()
-            except Exception:
-                pass
+            except Exception as exc:
+                self.after(0, lambda exc=exc: self._handle_error(exc))
+                return
 
             if video_bytes is None:
                 # Fallback to saving the raw response
