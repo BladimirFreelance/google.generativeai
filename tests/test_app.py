@@ -41,6 +41,11 @@ class DummyApp:
     def __init__(self):
         self.resolution_var = DummyVar("720p")
         self.duration_var = DummyVar(5)
+        self.fps_var = DummyVar(30)
+        self.aspect_ratio_var = DummyVar("16:9")
+        self.seed_var = DummyVar(42)
+        self.generate_audio_var = DummyVar(True)
+        self.negative_prompt_text = types.SimpleNamespace(get=lambda *args, **kwargs: "avoid cats")
         self.result = None
         self.error = None
 
@@ -68,6 +73,11 @@ def test_generate_worker_success(monkeypatch):
         def generate_content(self, prompt, generation_config):
             assert generation_config["resolution"] == "720p"
             assert generation_config["duration"] == 5
+            assert generation_config["fps"] == 30
+            assert generation_config["aspect_ratio"] == "16:9"
+            assert generation_config["seed"] == 42
+            assert generation_config["generate_audio"] is True
+            assert generation_config["negative_prompt"] == "avoid cats"
             assert prompt == "hello"
             data = base64.b64encode(b"video data").decode()
             part = types.SimpleNamespace(
