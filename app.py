@@ -1,8 +1,8 @@
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 
-import google.generativeai as genai
-import base64
+import google.genai as genai
+import time
 import threading
 
 
@@ -69,38 +69,37 @@ class VideoApp(tk.Tk):
 
     def _generate_worker(self, api_key: str, prompt: str) -> None:
         """Background thread that performs the API call."""
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel("models/veo-2.0-generate-001")
+        client = genai.Client(api_key=api_key)
         try:
-            response = model.generate_content(
-                prompt,
-                generation_config={
-                    "resolution": self.resolution_var.get(),
-                    "duration": int(self.duration_var.get()),
-                },
+            operation = client.models.generate_videos(
+                model="veo-2.0-generate-001",
+                prompt=prompt,
+                config=genai.types.GenerateVideosConfig(
+                    resolution=self.resolution_var.get(),
+                    duration_seconds=int(self.duration_var.get()),
+                ),
             )
 
-            # Extract base64 encoded bytes from the response
-            video_bytes = None
-            try:
-                part = response.candidates[0].content.parts[0]
-                if hasattr(part, "inline_data") and part.inline_data.data:
-                    video_bytes = base64.b64decode(part.inline_data.data)
-                elif hasattr(part, "file_data") and part.file_data.file_uri:
-                    # If a file URI is provided, attempt to download the content
-                    import urllib.request
+            while not getattr(operation, "done", True):
+                time.sleep(1)
+                operation = client.operations.get(operation)
 
-                    with urllib.request.urlopen(part.file_data.file_uri) as resp:
-                        video_bytes = resp.read()
-            except Exception:
-                pass
+            result = operation.result
+            video = result.generated_videos[0].video
+            video_bytes = video.video_bytes
+            if video_bytes is None and video.uri:
+                import urllib.request
 
+                with urllib.request.urlopen(video.uri) as resp:
+                    video_bytes = resp.read()
             if video_bytes is None:
-                # Fallback to saving the raw response
-                video_bytes = bytes(str(response), "utf-8")
-            self.after(0, lambda: self._handle_result(video_bytes))
+                video_bytes = bytes(str(result), "utf-8")
+            self.after(0, lambda vb=video_bytes: self._handle_result(vb))
         except Exception as exc:
-            self.after(0, lambda: self._handle_error(exc))
+            # Capture the exception in a default argument so it remains
+            # accessible when the scheduled callback executes after the
+            # except block has finished.
+            self.after(0, lambda exc=exc: self._handle_error(exc))
 
     def _handle_result(self, video_bytes: bytes) -> None:
         """Handle saving the generated video on the GUI thread."""

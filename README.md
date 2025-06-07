@@ -1,7 +1,7 @@
 # Gemini/Veo Video Generation Demo
 
 This repository contains a small GUI app that uses
-[google-generativeai](https://pypi.org/project/google-generativeai/) to generate
+[google-genai](https://pypi.org/project/google-genai/) to generate
 videos from prompts.
 
 ## Setup

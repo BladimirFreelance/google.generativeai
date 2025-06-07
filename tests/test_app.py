@@ -1,16 +1,21 @@
-import base64
 import os
 import sys
 import types
 
-# Provide a minimal stub for google.generativeai so that app.py can be imported
-genai_stub = types.ModuleType("google.generativeai")
-genai_stub.configure = lambda api_key: None
-genai_stub.GenerativeModel = object
+# Provide a minimal stub for google.genai so that app.py can be imported
+genai_stub = types.ModuleType("google.genai")
+
+class DummyGenerateVideosConfig:
+    def __init__(self, resolution=None, duration_seconds=None):
+        self.resolution = resolution
+        self.duration_seconds = duration_seconds
+
+genai_stub.types = types.SimpleNamespace(GenerateVideosConfig=DummyGenerateVideosConfig)
+genai_stub.Client = object
 google_pkg = types.ModuleType("google")
 google_pkg.__path__ = []
 sys.modules.setdefault("google", google_pkg)
-sys.modules["google.generativeai"] = genai_stub
+sys.modules["google.genai"] = genai_stub
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
@@ -46,28 +51,35 @@ def test_generate_worker_success(monkeypatch):
     dummy = DummyApp()
     captured_key = {}
 
-    def fake_configure(api_key):
-        captured_key["key"] = api_key
-
-    class FakeModel:
-        def __init__(self, model_id):
-            self.model_id = model_id
-
-        def generate_content(self, prompt, generation_config):
-            assert generation_config["resolution"] == "720p"
-            assert generation_config["duration"] == 5
-            assert prompt == "hello"
-            data = base64.b64encode(b"video data").decode()
-            part = types.SimpleNamespace(
-                inline_data=types.SimpleNamespace(data=data),
-                file_data=None,
+    class FakeOperation:
+        def __init__(self):
+            self.done = True
+            self.result = types.SimpleNamespace(
+                generated_videos=[
+                    types.SimpleNamespace(
+                        video=types.SimpleNamespace(video_bytes=b"video data", uri=None)
+                    )
+                ]
             )
-            content = types.SimpleNamespace(parts=[part])
-            candidate = types.SimpleNamespace(content=content)
-            return types.SimpleNamespace(candidates=[candidate])
 
-    monkeypatch.setattr(app.genai, "configure", fake_configure)
-    monkeypatch.setattr(app.genai, "GenerativeModel", lambda model_id: FakeModel(model_id))
+    class FakeClient:
+        def __init__(self, api_key):
+            captured_key["key"] = api_key
+            self.models = self
+            self.operations = self
+
+        def generate_videos(self, model, prompt=None, config=None):
+            assert model == "veo-2.0-generate-001"
+            assert prompt == "hello"
+            assert isinstance(config, DummyGenerateVideosConfig)
+            assert config.resolution == "720p"
+            assert config.duration_seconds == 5
+            return FakeOperation()
+
+        def get(self, operation):
+            return operation
+
+    monkeypatch.setattr(app.genai, "Client", FakeClient)
 
     app.VideoApp._generate_worker(dummy, "APIKEY", "hello")
 
@@ -79,20 +91,63 @@ def test_generate_worker_success(monkeypatch):
 def test_generate_worker_error(monkeypatch):
     dummy = DummyApp()
 
-    def fake_configure(api_key):
-        pass
-
-    class FakeModel:
-        def __init__(self, model_id):
+    class FakeClient:
+        def __init__(self, api_key):
             pass
 
-        def generate_content(self, prompt, generation_config):
+        def generate_videos(self, model, prompt=None, config=None):
             raise RuntimeError("boom")
 
-    monkeypatch.setattr(app.genai, "configure", fake_configure)
-    monkeypatch.setattr(app.genai, "GenerativeModel", lambda model_id: FakeModel(model_id))
+        @property
+        def models(self):
+            return self
+
+        @property
+        def operations(self):
+            return self
+
+    monkeypatch.setattr(app.genai, "Client", FakeClient)
 
     app.VideoApp._generate_worker(dummy, "KEY", "prompt")
+
+    assert dummy.result is None
+    assert isinstance(dummy.error, RuntimeError)
+
+
+class DelayedDummyApp(DummyApp):
+    def __init__(self):
+        super().__init__()
+        self._callback = None
+
+    def after(self, delay, func):
+        self._callback = func
+
+
+def test_generate_worker_error_delayed(monkeypatch):
+    dummy = DelayedDummyApp()
+
+    class FakeClient:
+        def __init__(self, api_key):
+            pass
+
+        def generate_videos(self, model, prompt=None, config=None):
+            raise RuntimeError("boom")
+
+        @property
+        def models(self):
+            return self
+
+        @property
+        def operations(self):
+            return self
+
+    monkeypatch.setattr(app.genai, "Client", FakeClient)
+
+    # Run worker; callback is stored but not executed yet
+    app.VideoApp._generate_worker(dummy, "KEY", "prompt")
+
+    # Now execute the callback after the except block has finished
+    dummy._callback()
 
     assert dummy.result is None
     assert isinstance(dummy.error, RuntimeError)
