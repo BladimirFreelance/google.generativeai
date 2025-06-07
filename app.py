@@ -179,7 +179,7 @@ class VideoApp(tk.Tk):
     def _generate_worker(self, api_key: str, prompt: str) -> None:
         """Background thread that performs the API call."""
         genai.configure(api_key=api_key)
-        model = genai.GenerativeModel("models/veo-2.0-generate-001")
+        client = genai.GenerativeClient()
 
         spinner_stop = threading.Event()
         spinner_thread = None
@@ -204,8 +204,9 @@ class VideoApp(tk.Tk):
                 negative_prompt=negative or None,
             )
 
-            operation = model.generate_content(
+            operation = client.models.generate_videos(
                 prompt,
+                model="models/veo-2.0-generate-001",
                 generation_config={
                     k: v
                     for k, v in asdict(cfg).items()
