@@ -14,8 +14,16 @@ pip install -r requirements.txt
 ```
 
 3. Obtain an API key for the Gemini/Veo API and set it when running the app or
-   paste it in the interface. Used keys are saved in `~/.veo_api_keys.db` so
-   they can be selected from a dropdown on future runs.
+   paste it in the interface. Used keys are saved in `~/.veo_api_keys.db`, an
+   SQLite database managed by `db.py`, so they can be selected from a dropdown
+   on future runs. Delete this file if you wish to remove saved keys.
+
+## How It Works
+
+The application configures a `google.generativeai.GenerativeClient` with your
+API key and calls `client.models.generate_videos()` to produce the output clip.
+The helper methods in `db.py` manage the stored keys, and the GUI polls the
+long‑running operation until a result is ready.
 
 ## Running
 
@@ -26,6 +34,9 @@ python app.py
 Enter your API key, the prompt, configure the video parameters and click
 **Generate**. When the generation completes you will be asked where to save the
 resulting video file.
+
+Right‑click or Ctrl‑click any text field to open a context menu for cut,
+copy and paste actions.
 
 Advanced settings are available under **Advanced Options** and map to fields on
 `GenerateVideosConfig`:
@@ -39,7 +50,8 @@ Advanced settings are available under **Advanced Options** and map to fields on
 ## Testing
 
 Unit tests require `pytest`. Install it along with the normal dependencies and
-run the test suite with:
+run the test suite with. After making changes be sure to re-run the tests to
+ensure everything still works:
 
 ```bash
 pip install -r requirements.txt pytest
