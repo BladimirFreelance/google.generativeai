@@ -4,6 +4,7 @@ from tkinter import ttk, filedialog, messagebox
 import google.generativeai as genai
 import base64
 import threading
+import time
 
 
 class VideoApp(tk.Tk):
@@ -139,13 +140,15 @@ class VideoApp(tk.Tk):
         """Start the progress spinner."""
         if not self._spinner_running:
             self._spinner_running = True
-            self.progress.start(10)
-            self.after(100, self._update_spinner)
+            self.progress.configure(mode="indeterminate")
+            self.progress['value'] = 0
 
     def _update_spinner(self) -> None:
         if self._spinner_running:
-            self.progress.step(5)
-            self.after(100, self._update_spinner)
+            try:
+                self.progress.step(5)
+            except tk.TclError:
+                pass
 
     def _stop_spinner(self) -> None:
         if self._spinner_running:
@@ -157,6 +160,18 @@ class VideoApp(tk.Tk):
         """Background thread that performs the API call."""
         genai.configure(api_key=api_key)
         model = genai.GenerativeModel("models/veo-2.0-generate-001")
+
+        spinner_stop = threading.Event()
+        spinner_thread = None
+        if hasattr(self, "_update_spinner"):
+            def spin_loop():
+                while not spinner_stop.is_set():
+                    self.after(0, self._update_spinner)
+                    time.sleep(0.1)
+
+            spinner_thread = threading.Thread(target=spin_loop, daemon=True)
+            spinner_thread.start()
+
         try:
             config = {
                 "resolution": self.resolution_var.get(),
@@ -217,6 +232,10 @@ class VideoApp(tk.Tk):
             # accessible when the scheduled callback executes after the
             # except block has finished.
             self.after(0, lambda exc=exc: self._handle_error(exc))
+        finally:
+            if spinner_thread is not None:
+                spinner_stop.set()
+                spinner_thread.join()
 
     def _handle_result(self, video_bytes: bytes) -> None:
         """Handle saving the generated video on the GUI thread."""
