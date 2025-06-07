@@ -26,7 +26,8 @@ Enter your API key, the prompt, configure the video parameters and click
 **Generate**. When the generation completes you will be asked where to save the
 resulting video file.
 
-The interface also exposes optional settings from `GenerateVideosConfig`:
+Advanced settings are available under **Advanced Options** and map to fields on
+`GenerateVideosConfig`:
 
 - **FPS** – frames per second for the output video.
 - **Aspect Ratio** – choose 16:9 or 9:16.
