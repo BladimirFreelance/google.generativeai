@@ -272,21 +272,25 @@ class VideoApp(tk.Tk):
 
             # Extract base64 encoded bytes from the response
             video_bytes = None
-            try:
-                part = response.candidates[0].content.parts[0]
-                if hasattr(part, "inline_data") and part.inline_data.data:
-                    video_bytes = base64.b64decode(part.inline_data.data)
-                elif hasattr(part, "file_data") and part.file_data.file_uri:
-                    # If a file URI is provided, attempt to download the
-                    # content
-                    import urllib.request
+            part = response.candidates[0].content.parts[0]
+            inline_data = getattr(part, "inline_data", None)
+            if inline_data is not None and getattr(inline_data, "data", None):
+                video_bytes = base64.b64decode(inline_data.data)
+            elif getattr(part, "file_data", None) is not None and part.file_data.file_uri:
+                # If a file URI is provided, attempt to download the
+                # content. Only https is allowed.
+                import urllib.request
+                import urllib.parse
 
-                    with urllib.request.urlopen(
-                        part.file_data.file_uri
-                    ) as resp:
+                uri = part.file_data.file_uri
+                scheme = urllib.parse.urlparse(uri).scheme
+                if scheme != "https":
+                    raise RuntimeError(f"Unsupported URI scheme: {scheme}")
+                try:
+                    with urllib.request.urlopen(uri) as resp:
                         video_bytes = resp.read()
-            except Exception:
-                pass
+                except Exception as e:
+                    raise RuntimeError(f"Failed to download {uri}") from e
 
             if video_bytes is None:
                 # Fallback to saving the raw response

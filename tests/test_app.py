@@ -106,6 +106,113 @@ def test_generate_worker_success(monkeypatch):
     assert dummy.error is None
 
 
+def test_generate_worker_file_uri_https(monkeypatch):
+    dummy = DummyApp()
+
+    class FakeClient:
+        def __init__(self):
+            def generate_videos(prompt, *, model, generation_config):
+                part = types.SimpleNamespace(
+                    inline_data=None,
+                    file_data=types.SimpleNamespace(
+                        file_uri="https://example.com/video.mp4"
+                    ),
+                )
+                content = types.SimpleNamespace(parts=[part])
+                candidate = types.SimpleNamespace(content=content)
+                result = types.SimpleNamespace(candidates=[candidate])
+                return FakeOperation(result_obj=result)
+
+            self.models = types.SimpleNamespace(generate_videos=generate_videos)
+
+    monkeypatch.setattr(app.genai, "configure", lambda api_key: None)
+    monkeypatch.setattr(app.genai, "GenerativeClient", lambda: FakeClient())
+
+    import urllib.request
+
+    class DummyResp:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            pass
+
+        def read(self):
+            return b"via url"
+
+    monkeypatch.setattr(urllib.request, "urlopen", lambda url: DummyResp())
+
+    app.VideoApp._generate_worker(dummy, "KEY", "prompt")
+
+    assert dummy.result == b"via url"
+    assert dummy.error is None
+
+
+def test_generate_worker_file_uri_bad_scheme(monkeypatch):
+    dummy = DummyApp()
+
+    class FakeClient:
+        def __init__(self):
+            def generate_videos(prompt, *, model, generation_config):
+                part = types.SimpleNamespace(
+                    inline_data=None,
+                    file_data=types.SimpleNamespace(
+                        file_uri="http://example.com/video.mp4"
+                    ),
+                )
+                content = types.SimpleNamespace(parts=[part])
+                candidate = types.SimpleNamespace(content=content)
+                result = types.SimpleNamespace(candidates=[candidate])
+                return FakeOperation(result_obj=result)
+
+            self.models = types.SimpleNamespace(generate_videos=generate_videos)
+
+    monkeypatch.setattr(app.genai, "configure", lambda api_key: None)
+    monkeypatch.setattr(app.genai, "GenerativeClient", lambda: FakeClient())
+
+    app.VideoApp._generate_worker(dummy, "KEY", "prompt")
+
+    assert dummy.result is None
+    assert isinstance(dummy.error, RuntimeError)
+    assert "Unsupported URI scheme" in str(dummy.error)
+
+
+def test_generate_worker_file_uri_download_error(monkeypatch):
+    dummy = DummyApp()
+
+    class FakeClient:
+        def __init__(self):
+            def generate_videos(prompt, *, model, generation_config):
+                part = types.SimpleNamespace(
+                    inline_data=None,
+                    file_data=types.SimpleNamespace(
+                        file_uri="https://example.com/video.mp4"
+                    ),
+                )
+                content = types.SimpleNamespace(parts=[part])
+                candidate = types.SimpleNamespace(content=content)
+                result = types.SimpleNamespace(candidates=[candidate])
+                return FakeOperation(result_obj=result)
+
+            self.models = types.SimpleNamespace(generate_videos=generate_videos)
+
+    monkeypatch.setattr(app.genai, "configure", lambda api_key: None)
+    monkeypatch.setattr(app.genai, "GenerativeClient", lambda: FakeClient())
+
+    import urllib.request
+
+    def fail(url):
+        raise OSError("network down")
+
+    monkeypatch.setattr(urllib.request, "urlopen", fail)
+
+    app.VideoApp._generate_worker(dummy, "KEY", "prompt")
+
+    assert dummy.result is None
+    assert isinstance(dummy.error, RuntimeError)
+    assert "Failed to download" in str(dummy.error)
+
+
 def test_generate_worker_error(monkeypatch):
     dummy = DummyApp()
 
