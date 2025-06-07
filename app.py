@@ -37,16 +37,24 @@ class VideoApp(tk.Tk):
         # Duration spinbox
         tk.Label(self, text="Duration (s):").grid(row=3, column=0, sticky="e")
         self.duration_var = tk.IntVar(value=10)
-        tk.Spinbox(self, from_=1, to=60, textvariable=self.duration_var, width=5).grid(
-            row=3, column=1, sticky="w"
-        )
+        tk.Spinbox(
+            self,
+            from_=1,
+            to=60,
+            textvariable=self.duration_var,
+            width=5,
+        ).grid(row=3, column=1, sticky="w")
 
         # FPS spinbox
         tk.Label(self, text="FPS:").grid(row=4, column=0, sticky="e")
         self.fps_var = tk.IntVar(value=24)
-        tk.Spinbox(self, from_=1, to=120, textvariable=self.fps_var, width=5).grid(
-            row=4, column=1, sticky="w"
-        )
+        tk.Spinbox(
+            self,
+            from_=1,
+            to=120,
+            textvariable=self.fps_var,
+            width=5,
+        ).grid(row=4, column=1, sticky="w")
 
         # Aspect ratio dropdown
         tk.Label(self, text="Aspect Ratio:").grid(row=5, column=0, sticky="e")
@@ -62,34 +70,46 @@ class VideoApp(tk.Tk):
         # Seed spinbox
         tk.Label(self, text="Seed:").grid(row=6, column=0, sticky="e")
         self.seed_var = tk.IntVar(value=0)
-        tk.Spinbox(self, from_=0, to=2**31 - 1, textvariable=self.seed_var, width=10).grid(
-            row=6, column=1, sticky="w"
-        )
+        tk.Spinbox(
+            self,
+            from_=0,
+            to=2**31 - 1,
+            textvariable=self.seed_var,
+            width=10,
+        ).grid(row=6, column=1, sticky="w")
 
         # Negative prompt
-        tk.Label(self, text="Negative Prompt:").grid(row=7, column=0, sticky="ne")
+        tk.Label(self, text="Negative Prompt:").grid(
+            row=7, column=0, sticky="ne"
+        )
         self.negative_prompt_text = tk.Text(self, height=2, width=40)
         self.negative_prompt_text.grid(row=7, column=1, pady=5)
 
         # Generate audio option
         self.generate_audio_var = tk.BooleanVar(value=False)
-        tk.Checkbutton(self, text="Generate Audio", variable=self.generate_audio_var).grid(
-            row=8, column=1, sticky="w"
-        )
+        tk.Checkbutton(
+            self,
+            text="Generate Audio",
+            variable=self.generate_audio_var,
+        ).grid(row=8, column=1, sticky="w")
 
         # Generate button
-        self.generate_btn = tk.Button(self, text="Generate", command=self.generate)
+        self.generate_btn = tk.Button(
+            self, text="Generate", command=self.generate
+        )
         self.generate_btn.grid(row=9, column=0, columnspan=2, pady=10)
 
         # Progress/result label
         self.status_var = tk.StringVar(value="")
-        tk.Label(self, textvariable=self.status_var).grid(row=10, column=0, columnspan=2)
+        tk.Label(self, textvariable=self.status_var).grid(
+            row=10, column=0, columnspan=2
+        )
 
         # Progress bar used as a spinner while polling
         self.progress = ttk.Progressbar(self, mode="indeterminate", length=200)
         self.progress.grid(row=11, column=0, columnspan=2, pady=5)
         self.progress.grid_remove()
-        
+
         # Spinner control variables
         self._spinner_running = False
 
@@ -98,7 +118,9 @@ class VideoApp(tk.Tk):
         api_key = self.api_key_entry.get().strip()
         prompt = self.prompt_text.get("1.0", tk.END).strip()
         if not api_key or not prompt:
-            messagebox.showerror("Missing Data", "API key and prompt are required.")
+            messagebox.showerror(
+                "Missing Data", "API key and prompt are required."
+            )
             return
 
         self.status_var.set("Generating...")
@@ -168,10 +190,13 @@ class VideoApp(tk.Tk):
                 if hasattr(part, "inline_data") and part.inline_data.data:
                     video_bytes = base64.b64decode(part.inline_data.data)
                 elif hasattr(part, "file_data") and part.file_data.file_uri:
-                    # If a file URI is provided, attempt to download the content
+                    # If a file URI is provided, attempt to download the
+                    # content
                     import urllib.request
 
-                    with urllib.request.urlopen(part.file_data.file_uri) as resp:
+                    with urllib.request.urlopen(
+                        part.file_data.file_uri
+                    ) as resp:
                         video_bytes = resp.read()
             except Exception:
                 pass
