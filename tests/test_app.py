@@ -96,3 +96,35 @@ def test_generate_worker_error(monkeypatch):
 
     assert dummy.result is None
     assert isinstance(dummy.error, RuntimeError)
+
+
+class DelayedDummyApp(DummyApp):
+    def __init__(self):
+        super().__init__()
+        self._callback = None
+
+    def after(self, delay, func):
+        self._callback = func
+
+
+def test_generate_worker_error_delayed(monkeypatch):
+    dummy = DelayedDummyApp()
+
+    class FakeModel:
+        def __init__(self, model_id):
+            pass
+
+        def generate_content(self, prompt, generation_config):
+            raise RuntimeError("boom")
+
+    monkeypatch.setattr(app.genai, "configure", lambda api_key: None)
+    monkeypatch.setattr(app.genai, "GenerativeModel", lambda model_id: FakeModel(model_id))
+
+    # Run worker; callback is stored but not executed yet
+    app.VideoApp._generate_worker(dummy, "KEY", "prompt")
+
+    # Now execute the callback after the except block has finished
+    dummy._callback()
+
+    assert dummy.result is None
+    assert isinstance(dummy.error, RuntimeError)
