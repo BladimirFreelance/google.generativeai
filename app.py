@@ -76,7 +76,9 @@ class VideoApp(tk.Tk):
         ).grid(row=0, column=1, sticky="w")
 
         # Aspect ratio dropdown
-        tk.Label(advanced, text="Aspect Ratio:").grid(row=1, column=0, sticky="e")
+        tk.Label(advanced, text="Aspect Ratio:").grid(
+            row=1, column=0, sticky="e"
+        )
         self.aspect_ratio_var = tk.StringVar(value="16:9")
         ttk.Combobox(
             advanced,
@@ -204,7 +206,11 @@ class VideoApp(tk.Tk):
 
             operation = model.generate_content(
                 prompt,
-                generation_config={k: v for k, v in asdict(cfg).items() if v is not None},
+                generation_config={
+                    k: v
+                    for k, v in asdict(cfg).items()
+                    if v is not None
+                },
             )
 
             # Poll until the operation completes
