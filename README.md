@@ -14,7 +14,8 @@ pip install -r requirements.txt
 ```
 
 3. Obtain an API key for the Gemini/Veo API and set it when running the app or
-   paste it in the interface.
+   paste it in the interface. Used keys are saved in `~/.veo_api_keys.db` so
+   they can be selected from a dropdown on future runs.
 
 ## Running
 

@@ -9,6 +9,8 @@ from typing import Optional
 
 import google.generativeai as genai
 
+import db
+
 
 @dataclass
 class GenerateVideosConfig:
@@ -30,7 +32,13 @@ class VideoApp(tk.Tk):
 
         # API key
         tk.Label(self, text="API Key:").grid(row=0, column=0, sticky="e")
-        self.api_key_entry = tk.Entry(self, width=40, show="*")
+        self.api_key_var = tk.StringVar()
+        self.api_key_entry = ttk.Combobox(
+            self,
+            textvariable=self.api_key_var,
+            values=db.load_keys(),
+            width=40,
+        )
         self.api_key_entry.grid(row=0, column=1, pady=5)
 
         # Prompt
@@ -156,7 +164,9 @@ class VideoApp(tk.Tk):
 
     def generate(self):
         """Generate the video using the provided prompt and configuration."""
-        api_key = self.api_key_entry.get().strip()
+        api_key = self.api_key_var.get().strip()
+        db.save_key(api_key)
+        self.api_key_entry["values"] = db.load_keys()
         prompt = self.prompt_text.get("1.0", tk.END).strip()
         if not api_key or not prompt:
             messagebox.showerror(
