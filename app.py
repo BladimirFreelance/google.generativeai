@@ -3,6 +3,7 @@ from tkinter import ttk, filedialog, messagebox
 
 import google.generativeai as genai
 import base64
+import threading
 
 
 class VideoApp(tk.Tk):
@@ -56,11 +57,20 @@ class VideoApp(tk.Tk):
             messagebox.showerror("Missing Data", "API key and prompt are required.")
             return
 
+        self.status_var.set("Generating...")
+        self.generate_btn.config(state=tk.DISABLED)
+        self.update_idletasks()
+
+        threading.Thread(
+            target=self._generate_worker,
+            args=(api_key, prompt),
+            daemon=True,
+        ).start()
+
+    def _generate_worker(self, api_key: str, prompt: str) -> None:
+        """Background thread that performs the API call."""
         genai.configure(api_key=api_key)
         model = genai.GenerativeModel("models/veo-2.0-generate-001")
-
-        self.status_var.set("Generating...")
-        self.update_idletasks()
         try:
             response = model.generate_content(
                 prompt,
@@ -88,18 +98,28 @@ class VideoApp(tk.Tk):
             if video_bytes is None:
                 # Fallback to saving the raw response
                 video_bytes = bytes(str(response), "utf-8")
-            path = filedialog.asksaveasfilename(
-                defaultextension=".mp4",
-                filetypes=[("MP4 files", "*.mp4"), ("All files", "*.*")],
-            )
-            if path:
-                with open(path, "wb") as f:
-                    f.write(video_bytes)
-                messagebox.showinfo("Saved", f"Video saved to {path}")
-            self.status_var.set("Done")
+            self.after(0, lambda: self._handle_result(video_bytes))
         except Exception as exc:
-            self.status_var.set("Error generating video")
-            messagebox.showerror("Error", str(exc))
+            self.after(0, lambda: self._handle_error(exc))
+
+    def _handle_result(self, video_bytes: bytes) -> None:
+        """Handle saving the generated video on the GUI thread."""
+        path = filedialog.asksaveasfilename(
+            defaultextension=".mp4",
+            filetypes=[("MP4 files", "*.mp4"), ("All files", "*.*")],
+        )
+        if path:
+            with open(path, "wb") as f:
+                f.write(video_bytes)
+            messagebox.showinfo("Saved", f"Video saved to {path}")
+        self.status_var.set("Done")
+        self.generate_btn.config(state=tk.NORMAL)
+
+    def _handle_error(self, exc: Exception) -> None:
+        """Display an error message from the GUI thread."""
+        self.status_var.set("Error generating video")
+        messagebox.showerror("Error", str(exc))
+        self.generate_btn.config(state=tk.NORMAL)
 
 
 if __name__ == "__main__":
