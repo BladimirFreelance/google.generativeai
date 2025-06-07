@@ -5,7 +5,6 @@ import base64
 import threading
 import time
 from dataclasses import asdict, dataclass
-from typing import Optional
 
 import google.generativeai as genai
 
