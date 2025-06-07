@@ -175,13 +175,20 @@ class VideoApp(tk.Tk):
                 generation_config=config,
             )
 
-            # Poll until the operation completes and obtain the response
-            response = operation.result()
+            # Poll until the operation completes
+            operation.result()
 
             if getattr(operation, "error", None) is not None:
                 # Long running operation completed with an error
                 err = getattr(operation.error, "message", str(operation.error))
-                raise RuntimeError(err)
+                self.after(
+                    0,
+                    lambda err=err: self._handle_error(RuntimeError(err)),
+                )
+                return
+
+            # Obtain the successful response
+            response = operation.result()
 
             # Extract base64 encoded bytes from the response
             video_bytes = None

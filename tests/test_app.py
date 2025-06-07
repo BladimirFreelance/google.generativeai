@@ -187,3 +187,33 @@ def test_generate_worker_operation_error(monkeypatch):
     assert dummy.result is None
     assert isinstance(dummy.error, RuntimeError)
     assert "bad prompt" in str(dummy.error)
+
+
+def test_generate_worker_operation_error_delayed(monkeypatch):
+    dummy = DelayedDummyApp()
+
+    class FakeModel:
+        def __init__(self, model_id):
+            pass
+
+        def generate_content(self, prompt, generation_config):
+            result = types.SimpleNamespace(candidates=[])
+            return FakeOperation(
+                result_obj=result,
+                error=types.SimpleNamespace(message="delayed bad"),
+            )
+
+    monkeypatch.setattr(app.genai, "configure", lambda api_key: None)
+    monkeypatch.setattr(
+        app.genai, "GenerativeModel", lambda model_id: FakeModel(model_id)
+    )
+
+    # Run worker; callback is stored but not executed yet
+    app.VideoApp._generate_worker(dummy, "KEY", "prompt")
+
+    # Now execute the callback
+    dummy._callback()
+
+    assert dummy.result is None
+    assert isinstance(dummy.error, RuntimeError)
+    assert "delayed bad" in str(dummy.error)
