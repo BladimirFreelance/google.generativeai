@@ -23,22 +23,11 @@ class VideoApp(tk.Tk):
         self.prompt_text = tk.Text(self, height=5, width=40)
         self.prompt_text.grid(row=1, column=1, pady=5)
 
-        # Resolution dropdown
-        tk.Label(self, text="Resolution:").grid(row=2, column=0, sticky="e")
-        self.resolution_var = tk.StringVar(value="1080p")
-        ttk.Combobox(
-            self,
-            textvariable=self.resolution_var,
-            values=["480p", "720p", "1080p"],
-            state="readonly",
-            width=10,
-        ).grid(row=2, column=1, sticky="w")
-
         # Duration spinbox
-        tk.Label(self, text="Duration (s):").grid(row=3, column=0, sticky="e")
+        tk.Label(self, text="Duration (s):").grid(row=2, column=0, sticky="e")
         self.duration_var = tk.IntVar(value=10)
         tk.Spinbox(self, from_=1, to=60, textvariable=self.duration_var, width=5).grid(
-            row=3, column=1, sticky="w"
+            row=2, column=1, sticky="w"
         )
 
         # Generate button
@@ -75,7 +64,6 @@ class VideoApp(tk.Tk):
                 model="veo-2.0-generate-001",
                 prompt=prompt,
                 config=genai.types.GenerateVideosConfig(
-                    resolution=self.resolution_var.get(),
                     duration_seconds=int(self.duration_var.get()),
                 ),
             )

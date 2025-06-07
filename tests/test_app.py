@@ -6,8 +6,7 @@ import types
 genai_stub = types.ModuleType("google.genai")
 
 class DummyGenerateVideosConfig:
-    def __init__(self, resolution=None, duration_seconds=None):
-        self.resolution = resolution
+    def __init__(self, duration_seconds=None):
         self.duration_seconds = duration_seconds
 
 genai_stub.types = types.SimpleNamespace(GenerateVideosConfig=DummyGenerateVideosConfig)
@@ -32,7 +31,6 @@ class DummyVar:
 
 class DummyApp:
     def __init__(self):
-        self.resolution_var = DummyVar("720p")
         self.duration_var = DummyVar(5)
         self.result = None
         self.error = None
@@ -72,7 +70,6 @@ def test_generate_worker_success(monkeypatch):
             assert model == "veo-2.0-generate-001"
             assert prompt == "hello"
             assert isinstance(config, DummyGenerateVideosConfig)
-            assert config.resolution == "720p"
             assert config.duration_seconds == 5
             return FakeOperation()
 
