@@ -100,7 +100,10 @@ class VideoApp(tk.Tk):
                 video_bytes = bytes(str(response), "utf-8")
             self.after(0, lambda: self._handle_result(video_bytes))
         except Exception as exc:
-            self.after(0, lambda: self._handle_error(exc))
+            # Capture the exception in a default argument so it remains
+            # accessible when the scheduled callback executes after the
+            # except block has finished.
+            self.after(0, lambda exc=exc: self._handle_error(exc))
 
     def _handle_result(self, video_bytes: bytes) -> None:
         """Handle saving the generated video on the GUI thread."""
