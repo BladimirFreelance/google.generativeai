@@ -134,6 +134,26 @@ class VideoApp(tk.Tk):
         # Spinner control variables
         self._spinner_running = False
 
+        # Shared context menu for simple text widgets
+        self._context_target = None
+        self.context_menu = tk.Menu(self, tearoff=0)
+        self.context_menu.add_command(
+            label="Cut",
+            command=lambda: self._context_event("<<Cut>>"),
+        )
+        self.context_menu.add_command(
+            label="Copy",
+            command=lambda: self._context_event("<<Copy>>"),
+        )
+        self.context_menu.add_command(
+            label="Paste",
+            command=lambda: self._context_event("<<Paste>>"),
+        )
+
+        for seq in ("<Button-3>", "<Control-Button-1>"):
+            self.api_key_entry.bind(seq, self._show_context_menu, add="+")
+            self.prompt_text.bind(seq, self._show_context_menu, add="+")
+
     def generate(self):
         """Generate the video using the provided prompt and configuration."""
         api_key = self.api_key_entry.get().strip()
@@ -175,6 +195,17 @@ class VideoApp(tk.Tk):
             self._spinner_running = False
             self.progress.stop()
             self.progress.grid_remove()
+
+    def _context_event(self, sequence: str) -> None:
+        if self._context_target is not None:
+            self._context_target.event_generate(sequence)
+
+    def _show_context_menu(self, event) -> None:
+        self._context_target = event.widget
+        try:
+            self.context_menu.tk_popup(event.x_root, event.y_root)
+        finally:
+            self.context_menu.grab_release()
 
     def _generate_worker(self, api_key: str, prompt: str) -> None:
         """Background thread that performs the API call."""
