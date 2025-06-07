@@ -336,7 +336,9 @@ def test_generate_worker_fetch_error(monkeypatch):
                 result = types.SimpleNamespace(candidates=[candidate])
                 return FakeOperation(result_obj=result)
 
-            self.models = types.SimpleNamespace(generate_videos=generate_videos)
+            self.models = types.SimpleNamespace(
+                generate_videos=generate_videos
+            )
 
     monkeypatch.setattr(app.genai, "configure", lambda api_key: None)
     monkeypatch.setattr(app.genai, "GenerativeClient", lambda: FakeClient())
