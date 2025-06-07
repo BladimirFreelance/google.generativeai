@@ -25,3 +25,15 @@ python app.py
 Enter your API key, the prompt, configure the video parameters and click
 **Generate**. When the generation completes you will be asked where to save the
 resulting video file.
+
+## Testing
+
+Unit tests require `pytest`. Install it along with the normal dependencies and
+run the test suite with:
+
+```bash
+pip install -r requirements.txt pytest
+pytest
+```
+
+Tests exercise the API wrapper logic without making real network calls.
