@@ -92,8 +92,9 @@ def test_generate_worker_success(monkeypatch):
                 result = types.SimpleNamespace(candidates=[candidate])
                 return FakeOperation(result_obj=result)
 
-            self.models = types.SimpleNamespace(generate_videos=generate_videos)
-
+            self.models = types.SimpleNamespace(
+                generate_videos=generate_videos
+            )
 
     monkeypatch.setattr(app.genai, "configure", fake_configure)
     monkeypatch.setattr(app.genai, "GenerativeClient", lambda: FakeClient())
@@ -116,7 +117,9 @@ def test_generate_worker_error(monkeypatch):
             def generate_videos(prompt, *, model, generation_config):
                 return FakeOperation(raise_on_result=True)
 
-            self.models = types.SimpleNamespace(generate_videos=generate_videos)
+            self.models = types.SimpleNamespace(
+                generate_videos=generate_videos
+            )
 
     monkeypatch.setattr(app.genai, "configure", fake_configure)
     monkeypatch.setattr(app.genai, "GenerativeClient", lambda: FakeClient())
@@ -144,7 +147,9 @@ def test_generate_worker_error_delayed(monkeypatch):
             def generate_videos(prompt, *, model, generation_config):
                 return FakeOperation(raise_on_result=True)
 
-            self.models = types.SimpleNamespace(generate_videos=generate_videos)
+            self.models = types.SimpleNamespace(
+                generate_videos=generate_videos
+            )
 
     monkeypatch.setattr(app.genai, "configure", lambda api_key: None)
     monkeypatch.setattr(app.genai, "GenerativeClient", lambda: FakeClient())
@@ -171,7 +176,9 @@ def test_generate_worker_operation_error(monkeypatch):
                     error=types.SimpleNamespace(message="bad prompt"),
                 )
 
-            self.models = types.SimpleNamespace(generate_videos=generate_videos)
+            self.models = types.SimpleNamespace(
+                generate_videos=generate_videos
+            )
 
     monkeypatch.setattr(app.genai, "configure", lambda api_key: None)
     monkeypatch.setattr(app.genai, "GenerativeClient", lambda: FakeClient())
@@ -195,7 +202,9 @@ def test_generate_worker_operation_error_delayed(monkeypatch):
                     error=types.SimpleNamespace(message="delayed bad"),
                 )
 
-            self.models = types.SimpleNamespace(generate_videos=generate_videos)
+            self.models = types.SimpleNamespace(
+                generate_videos=generate_videos
+            )
 
     monkeypatch.setattr(app.genai, "configure", lambda api_key: None)
     monkeypatch.setattr(app.genai, "GenerativeClient", lambda: FakeClient())
