@@ -25,6 +25,18 @@ class DummyVar:
         return self._value
 
 
+class FakeOperation:
+    def __init__(self, result_obj=None, error=None, raise_on_result=False):
+        self._result_obj = result_obj
+        self.error = error
+        self._raise_on_result = raise_on_result
+
+    def result(self):
+        if self._raise_on_result:
+            raise RuntimeError("poll error")
+        return self._result_obj
+
+
 class DummyApp:
     def __init__(self):
         self.resolution_var = DummyVar("720p")
@@ -64,7 +76,8 @@ def test_generate_worker_success(monkeypatch):
             )
             content = types.SimpleNamespace(parts=[part])
             candidate = types.SimpleNamespace(content=content)
-            return types.SimpleNamespace(candidates=[candidate])
+            result = types.SimpleNamespace(candidates=[candidate])
+            return FakeOperation(result_obj=result)
 
     monkeypatch.setattr(app.genai, "configure", fake_configure)
     monkeypatch.setattr(app.genai, "GenerativeModel", lambda model_id: FakeModel(model_id))
@@ -87,7 +100,7 @@ def test_generate_worker_error(monkeypatch):
             pass
 
         def generate_content(self, prompt, generation_config):
-            raise RuntimeError("boom")
+            return FakeOperation(raise_on_result=True)
 
     monkeypatch.setattr(app.genai, "configure", fake_configure)
     monkeypatch.setattr(app.genai, "GenerativeModel", lambda model_id: FakeModel(model_id))
@@ -115,7 +128,7 @@ def test_generate_worker_error_delayed(monkeypatch):
             pass
 
         def generate_content(self, prompt, generation_config):
-            raise RuntimeError("boom")
+            return FakeOperation(raise_on_result=True)
 
     monkeypatch.setattr(app.genai, "configure", lambda api_key: None)
     monkeypatch.setattr(app.genai, "GenerativeModel", lambda model_id: FakeModel(model_id))
@@ -128,3 +141,24 @@ def test_generate_worker_error_delayed(monkeypatch):
 
     assert dummy.result is None
     assert isinstance(dummy.error, RuntimeError)
+
+
+def test_generate_worker_operation_error(monkeypatch):
+    dummy = DummyApp()
+
+    class FakeModel:
+        def __init__(self, model_id):
+            pass
+
+        def generate_content(self, prompt, generation_config):
+            result = types.SimpleNamespace(candidates=[])  # unused
+            return FakeOperation(result_obj=result, error=types.SimpleNamespace(message="bad prompt"))
+
+    monkeypatch.setattr(app.genai, "configure", lambda api_key: None)
+    monkeypatch.setattr(app.genai, "GenerativeModel", lambda model_id: FakeModel(model_id))
+
+    app.VideoApp._generate_worker(dummy, "KEY", "prompt")
+
+    assert dummy.result is None
+    assert isinstance(dummy.error, RuntimeError)
+    assert "bad prompt" in str(dummy.error)
