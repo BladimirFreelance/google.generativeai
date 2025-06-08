@@ -41,7 +41,6 @@ class FakeOperation:
 
 class DummyApp:
     def __init__(self):
-        self.duration_var = DummyVar(5)
         self.result = None
         self.error = None
 
@@ -63,8 +62,7 @@ def test_generate_worker_success(monkeypatch):
         captured_key["key"] = api_key
 
     class FakeModel:
-        def generate_content(self, prompt, *, generation_config):
-            assert generation_config["duration_seconds"] == 5
+        def generate_content(self, prompt):
             assert prompt == "hello"
             data = base64.b64encode(b"video data").decode()
             part = types.SimpleNamespace(
@@ -93,7 +91,7 @@ def test_generate_worker_error(monkeypatch):
         pass
 
     class FakeModel:
-        def generate_content(self, prompt, *, generation_config):
+        def generate_content(self, prompt):
             return FakeOperation(raise_on_result=True)
 
     monkeypatch.setattr(app.genai, "configure", fake_configure)
@@ -118,7 +116,7 @@ def test_generate_worker_error_delayed(monkeypatch):
     dummy = DelayedDummyApp()
 
     class FakeModel:
-        def generate_content(self, prompt, *, generation_config):
+        def generate_content(self, prompt):
             return FakeOperation(raise_on_result=True)
 
     monkeypatch.setattr(app.genai, "configure", lambda api_key: None)
@@ -138,7 +136,7 @@ def test_generate_worker_operation_error(monkeypatch):
     dummy = DummyApp()
 
     class FakeModel:
-        def generate_content(self, prompt, *, generation_config):
+        def generate_content(self, prompt):
             result = types.SimpleNamespace(candidates=[])
             return FakeOperation(
                 result_obj=result,
@@ -159,7 +157,7 @@ def test_generate_worker_operation_error_delayed(monkeypatch):
     dummy = DelayedDummyApp()
 
     class FakeModel:
-        def generate_content(self, prompt, *, generation_config):
+        def generate_content(self, prompt):
             result = types.SimpleNamespace(candidates=[])
             return FakeOperation(
                 result_obj=result,
@@ -279,7 +277,7 @@ def test_generate_worker_fetch_error(monkeypatch):
     dummy = DummyApp()
 
     class FakeModel:
-        def generate_content(self, prompt, *, generation_config):
+        def generate_content(self, prompt):
             part = types.SimpleNamespace(
                 inline_data=types.SimpleNamespace(data="bad"),
                 file_data=None,
