@@ -294,3 +294,25 @@ def test_generate_worker_fetch_error(monkeypatch):
 
     assert dummy.result is None
     assert isinstance(dummy.error, Exception)
+
+
+def test_handle_error_billing_message(monkeypatch):
+    messages = {}
+
+    monkeypatch.setattr(app.messagebox, "showerror", lambda title, msg: messages.setdefault("msg", msg))
+    monkeypatch.setattr(app.tk, "NORMAL", "normal", raising=False)
+
+    dummy = types.SimpleNamespace(
+        _stop_spinner=lambda: None,
+        status_var=types.SimpleNamespace(set=lambda v: None),
+        generate_btn=types.SimpleNamespace(config=lambda **k: None),
+    )
+
+    app.VideoApp._handle_error(
+        dummy,
+        RuntimeError(
+            "400 FAILED_PRECONDITION: The model models/veo-2.0-generate-001 is exclusively available to users with Google Cloud Platform billing enabled."
+        ),
+    )
+
+    assert "billing profile" in messages.get("msg", "")

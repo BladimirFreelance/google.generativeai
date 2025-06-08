@@ -213,7 +213,16 @@ class VideoApp(tk.Tk):
         """Display an error message from the GUI thread."""
         self._stop_spinner()
         self.status_var.set("Error generating video")
-        messagebox.showerror("Error", str(exc))
+        message = str(exc)
+        if (
+            "FAILED_PRECONDITION" in message
+            and "billing" in message.lower()
+        ):
+            message = (
+                "The selected model requires an active Google Cloud "
+                "Platform billing profile."
+            )
+        messagebox.showerror("Error", message)
         self.generate_btn.config(state=tk.NORMAL)
 
 
