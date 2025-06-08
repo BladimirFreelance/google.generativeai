@@ -35,7 +35,10 @@ class FakeOperation:
 
     def result(self):
         if self._raise_on_result:
-            raise RuntimeError("poll error")
+            raise RuntimeError(
+                "poll "
+                "error"
+            )
         return self._result_obj
 
 
@@ -75,7 +78,11 @@ def test_generate_worker_success(monkeypatch):
             return FakeOperation(result_obj=result)
 
     monkeypatch.setattr(app.genai, "configure", fake_configure)
-    monkeypatch.setattr(app.genai, "GenerativeModel", lambda name: FakeModel())
+    monkeypatch.setattr(
+        app.genai,
+        "GenerativeModel",
+        lambda name: FakeModel(),
+    )
 
     app.VideoApp._generate_worker(dummy, "APIKEY", "hello")
 
@@ -95,7 +102,11 @@ def test_generate_worker_error(monkeypatch):
             return FakeOperation(raise_on_result=True)
 
     monkeypatch.setattr(app.genai, "configure", fake_configure)
-    monkeypatch.setattr(app.genai, "GenerativeModel", lambda name: FakeModel())
+    monkeypatch.setattr(
+        app.genai,
+        "GenerativeModel",
+        lambda name: FakeModel(),
+    )
 
     app.VideoApp._generate_worker(dummy, "KEY", "prompt")
 
@@ -120,7 +131,11 @@ def test_generate_worker_error_delayed(monkeypatch):
             return FakeOperation(raise_on_result=True)
 
     monkeypatch.setattr(app.genai, "configure", lambda api_key: None)
-    monkeypatch.setattr(app.genai, "GenerativeModel", lambda name: FakeModel())
+    monkeypatch.setattr(
+        app.genai,
+        "GenerativeModel",
+        lambda name: FakeModel(),
+    )
 
     # Run worker; callback is stored but not executed yet
     app.VideoApp._generate_worker(dummy, "KEY", "prompt")
@@ -144,7 +159,11 @@ def test_generate_worker_operation_error(monkeypatch):
             )
 
     monkeypatch.setattr(app.genai, "configure", lambda api_key: None)
-    monkeypatch.setattr(app.genai, "GenerativeModel", lambda name: FakeModel())
+    monkeypatch.setattr(
+        app.genai,
+        "GenerativeModel",
+        lambda name: FakeModel(),
+    )
 
     app.VideoApp._generate_worker(dummy, "KEY", "prompt")
 
@@ -288,7 +307,11 @@ def test_generate_worker_fetch_error(monkeypatch):
             return FakeOperation(result_obj=result)
 
     monkeypatch.setattr(app.genai, "configure", lambda api_key: None)
-    monkeypatch.setattr(app.genai, "GenerativeModel", lambda name: FakeModel())
+    monkeypatch.setattr(
+        app.genai,
+        "GenerativeModel",
+        lambda name: FakeModel(),
+    )
 
     app.VideoApp._generate_worker(dummy, "KEY", "prompt")
 
