@@ -21,9 +21,9 @@ pip install -r requirements.txt
 ## How It Works
 
 The application configures the library with your API key using
-`genai.configure(api_key)` and obtains a client via
-`google.generativeai.client.get_default_generative_client()`. It then calls the
-client's `models.generate_videos()` method to produce the output clip.
+`genai.configure(api_key)` and instantiates a
+`genai.GenerativeModel` object. It then calls the model's
+`generate_content()` method to produce the output clip.
 The helper methods in `db.py` manage the stored keys, and the GUI polls the
 long‑running operation until a result is ready.
 

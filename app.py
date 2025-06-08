@@ -4,10 +4,9 @@ from tkinter import ttk, filedialog, messagebox
 import base64
 import threading
 import time
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 
 import google.generativeai as genai
-from google.generativeai import client as genai_client
 
 import db
 
@@ -149,7 +148,7 @@ class VideoApp(tk.Tk):
     def _generate_worker(self, api_key: str, prompt: str) -> None:
         """Background thread that performs the API call."""
         genai.configure(api_key=api_key)
-        client = genai_client.get_default_generative_client()
+        model = genai.GenerativeModel("models/veo-2.0-generate-001")
 
         spinner_stop = threading.Event()
         spinner_thread = None
@@ -167,19 +166,14 @@ class VideoApp(tk.Tk):
                 duration=int(self.duration_var.get()),
             )
 
-            operation = client.models.generate_videos(
+            operation = model.generate_content(
                 prompt,
-                model="models/veo-2.0-generate-001",
                 generation_config={
-                    k: v
-                    for k, v in asdict(cfg).items()
-                    if v is not None
+                    "duration_seconds": cfg.duration,
                 },
             )
 
-            # Poll until the operation completes
-            operation.result()
-
+            response = operation.result()
             if getattr(operation, "error", None) is not None:
                 # Long running operation completed with an error
                 err = getattr(operation.error, "message", str(operation.error))
@@ -189,8 +183,7 @@ class VideoApp(tk.Tk):
                 )
                 return
 
-            # Obtain the successful response
-            response = operation.result()
+            # Obtain the successful response (already stored in 'response')
 
             # Extract base64 encoded bytes from the response
             video_bytes = None
