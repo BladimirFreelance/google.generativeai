@@ -6,14 +6,11 @@ import types
 # Provide a minimal stub for google.generativeai so that app.py can be imported
 genai_stub = types.ModuleType("google.generativeai")
 genai_stub.configure = lambda api_key: None
-client_stub = types.ModuleType("google.generativeai.client")
-client_stub.get_default_generative_client = lambda: object
-genai_stub.client = client_stub
+genai_stub.GenerativeModel = lambda *a, **k: None
 google_pkg = types.ModuleType("google")
 google_pkg.__path__ = []
 sys.modules.setdefault("google", google_pkg)
 sys.modules["google.generativeai"] = genai_stub
-sys.modules["google.generativeai.client"] = client_stub
 
 sys.path.insert(
     0, os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -65,34 +62,22 @@ def test_generate_worker_success(monkeypatch):
     def fake_configure(api_key):
         captured_key["key"] = api_key
 
-    class FakeClient:
-        def __init__(self):
-            def generate_videos(prompt, *, model, generation_config):
-                assert model == "models/veo-2.0-generate-001"
-                assert generation_config["duration"] == 5
-                assert prompt == "hello"
-                data = base64.b64encode(b"video data").decode()
-                part = types.SimpleNamespace(
-                    inline_data=types.SimpleNamespace(data=data),
-                    file_data=None,
-                )
-                content = types.SimpleNamespace(parts=[part])
-                candidate = types.SimpleNamespace(content=content)
-                result = types.SimpleNamespace(
-                    candidates=[candidate]
-                )
-                return FakeOperation(result_obj=result)
-
-            self.models = types.SimpleNamespace(
-                generate_videos=generate_videos
+    class FakeModel:
+        def generate_content(self, prompt, *, generation_config):
+            assert generation_config["duration_seconds"] == 5
+            assert prompt == "hello"
+            data = base64.b64encode(b"video data").decode()
+            part = types.SimpleNamespace(
+                inline_data=types.SimpleNamespace(data=data),
+                file_data=None,
             )
+            content = types.SimpleNamespace(parts=[part])
+            candidate = types.SimpleNamespace(content=content)
+            result = types.SimpleNamespace(candidates=[candidate])
+            return FakeOperation(result_obj=result)
 
     monkeypatch.setattr(app.genai, "configure", fake_configure)
-    monkeypatch.setattr(
-        app.genai_client,
-        "get_default_generative_client",
-        lambda: FakeClient(),
-    )
+    monkeypatch.setattr(app.genai, "GenerativeModel", lambda name: FakeModel())
 
     app.VideoApp._generate_worker(dummy, "APIKEY", "hello")
 
@@ -107,21 +92,12 @@ def test_generate_worker_error(monkeypatch):
     def fake_configure(api_key):
         pass
 
-    class FakeClient:
-        def __init__(self):
-            def generate_videos(prompt, *, model, generation_config):
-                return FakeOperation(raise_on_result=True)
-
-            self.models = types.SimpleNamespace(
-                generate_videos=generate_videos
-            )
+    class FakeModel:
+        def generate_content(self, prompt, *, generation_config):
+            return FakeOperation(raise_on_result=True)
 
     monkeypatch.setattr(app.genai, "configure", fake_configure)
-    monkeypatch.setattr(
-        app.genai_client,
-        "get_default_generative_client",
-        lambda: FakeClient(),
-    )
+    monkeypatch.setattr(app.genai, "GenerativeModel", lambda name: FakeModel())
 
     app.VideoApp._generate_worker(dummy, "KEY", "prompt")
 
@@ -141,21 +117,12 @@ class DelayedDummyApp(DummyApp):
 def test_generate_worker_error_delayed(monkeypatch):
     dummy = DelayedDummyApp()
 
-    class FakeClient:
-        def __init__(self):
-            def generate_videos(prompt, *, model, generation_config):
-                return FakeOperation(raise_on_result=True)
-
-            self.models = types.SimpleNamespace(
-                generate_videos=generate_videos
-            )
+    class FakeModel:
+        def generate_content(self, prompt, *, generation_config):
+            return FakeOperation(raise_on_result=True)
 
     monkeypatch.setattr(app.genai, "configure", lambda api_key: None)
-    monkeypatch.setattr(
-        app.genai_client,
-        "get_default_generative_client",
-        lambda: FakeClient(),
-    )
+    monkeypatch.setattr(app.genai, "GenerativeModel", lambda name: FakeModel())
 
     # Run worker; callback is stored but not executed yet
     app.VideoApp._generate_worker(dummy, "KEY", "prompt")
@@ -170,27 +137,16 @@ def test_generate_worker_error_delayed(monkeypatch):
 def test_generate_worker_operation_error(monkeypatch):
     dummy = DummyApp()
 
-    class FakeClient:
-        def __init__(self):
-            def generate_videos(prompt, *, model, generation_config):
-                result = types.SimpleNamespace(
-                    candidates=[]
-                )
-                return FakeOperation(
-                    result_obj=result,
-                    error=types.SimpleNamespace(message="bad prompt"),
-                )
-
-            self.models = types.SimpleNamespace(
-                generate_videos=generate_videos
+    class FakeModel:
+        def generate_content(self, prompt, *, generation_config):
+            result = types.SimpleNamespace(candidates=[])
+            return FakeOperation(
+                result_obj=result,
+                error=types.SimpleNamespace(message="bad prompt"),
             )
 
     monkeypatch.setattr(app.genai, "configure", lambda api_key: None)
-    monkeypatch.setattr(
-        app.genai_client,
-        "get_default_generative_client",
-        lambda: FakeClient(),
-    )
+    monkeypatch.setattr(app.genai, "GenerativeModel", lambda name: FakeModel())
 
     app.VideoApp._generate_worker(dummy, "KEY", "prompt")
 
@@ -202,27 +158,16 @@ def test_generate_worker_operation_error(monkeypatch):
 def test_generate_worker_operation_error_delayed(monkeypatch):
     dummy = DelayedDummyApp()
 
-    class FakeClient:
-        def __init__(self):
-            def generate_videos(prompt, *, model, generation_config):
-                result = types.SimpleNamespace(
-                    candidates=[]
-                )
-                return FakeOperation(
-                    result_obj=result,
-                    error=types.SimpleNamespace(message="delayed bad"),
-                )
-
-            self.models = types.SimpleNamespace(
-                generate_videos=generate_videos
+    class FakeModel:
+        def generate_content(self, prompt, *, generation_config):
+            result = types.SimpleNamespace(candidates=[])
+            return FakeOperation(
+                result_obj=result,
+                error=types.SimpleNamespace(message="delayed bad"),
             )
 
     monkeypatch.setattr(app.genai, "configure", lambda api_key: None)
-    monkeypatch.setattr(
-        app.genai_client,
-        "get_default_generative_client",
-        lambda: FakeClient(),
-    )
+    monkeypatch.setattr(app.genai, "GenerativeModel", lambda name: FakeModel())
 
     # Run worker; callback is stored but not executed yet
     app.VideoApp._generate_worker(dummy, "KEY", "prompt")
@@ -333,28 +278,19 @@ def test_context_menu_bindings(monkeypatch):
 def test_generate_worker_fetch_error(monkeypatch):
     dummy = DummyApp()
 
-    class FakeClient:
-        def __init__(self):
-            def generate_videos(prompt, *, model, generation_config):
-                part = types.SimpleNamespace(
-                    inline_data=types.SimpleNamespace(data="bad"),
-                    file_data=None,
-                )
-                content = types.SimpleNamespace(parts=[part])
-                candidate = types.SimpleNamespace(content=content)
-                result = types.SimpleNamespace(candidates=[candidate])
-                return FakeOperation(result_obj=result)
-
-            self.models = types.SimpleNamespace(
-                generate_videos=generate_videos
+    class FakeModel:
+        def generate_content(self, prompt, *, generation_config):
+            part = types.SimpleNamespace(
+                inline_data=types.SimpleNamespace(data="bad"),
+                file_data=None,
             )
+            content = types.SimpleNamespace(parts=[part])
+            candidate = types.SimpleNamespace(content=content)
+            result = types.SimpleNamespace(candidates=[candidate])
+            return FakeOperation(result_obj=result)
 
     monkeypatch.setattr(app.genai, "configure", lambda api_key: None)
-    monkeypatch.setattr(
-        app.genai_client,
-        "get_default_generative_client",
-        lambda: FakeClient(),
-    )
+    monkeypatch.setattr(app.genai, "GenerativeModel", lambda name: FakeModel())
 
     app.VideoApp._generate_worker(dummy, "KEY", "prompt")
 
