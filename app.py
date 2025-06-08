@@ -8,6 +8,7 @@ import time
 import google.generativeai as genai
 import db
 
+
 class VideoApp(tk.Tk):
     """Simple GUI for generating videos using Gemini/Veo."""
 
@@ -30,8 +31,6 @@ class VideoApp(tk.Tk):
         tk.Label(self, text="Prompt:").grid(row=1, column=0, sticky="ne")
         self.prompt_text = tk.Text(self, height=5, width=40)
         self.prompt_text.grid(row=1, column=1, pady=5)
-
-
 
         # Generate button
         self.generate_btn = tk.Button(
