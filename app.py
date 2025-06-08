@@ -4,17 +4,9 @@ from tkinter import ttk, filedialog, messagebox
 import base64
 import threading
 import time
-from dataclasses import dataclass
 
 import google.generativeai as genai
-
 import db
-
-
-@dataclass
-class GenerateVideosConfig:
-    duration: int
-
 
 class VideoApp(tk.Tk):
     """Simple GUI for generating videos using Gemini/Veo."""
@@ -39,16 +31,7 @@ class VideoApp(tk.Tk):
         self.prompt_text = tk.Text(self, height=5, width=40)
         self.prompt_text.grid(row=1, column=1, pady=5)
 
-        # Duration spinbox
-        tk.Label(self, text="Duration (s):").grid(row=2, column=0, sticky="e")
-        self.duration_var = tk.IntVar(value=10)
-        tk.Spinbox(
-            self,
-            from_=1,
-            to=60,
-            textvariable=self.duration_var,
-            width=5,
-        ).grid(row=2, column=1, sticky="w")
+
 
         # Generate button
         self.generate_btn = tk.Button(
@@ -162,16 +145,7 @@ class VideoApp(tk.Tk):
             spinner_thread.start()
 
         try:
-            cfg = GenerateVideosConfig(
-                duration=int(self.duration_var.get()),
-            )
-
-            operation = model.generate_content(
-                prompt,
-                generation_config={
-                    "duration_seconds": cfg.duration,
-                },
-            )
+            operation = model.generate_content(prompt)
 
             response = operation.result()
             if getattr(operation, "error", None) is not None:
